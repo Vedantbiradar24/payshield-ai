@@ -1,0 +1,11 @@
+amount,time,location,is_new_location,card_type
+1500,14:30,Mumbai,No,Credit
+75000,02:15,Unknown,Yes,Prepaid
+25000,11:00,Delhi,No,Debit
+3000,09:45,Mumbai,No,Credit
+60000,03:30,Bangalore,Yes,Prepaid
+1200,16:20,Mumbai,No,Debit
+45000,23:50,Chennai,Yes,Credit
+800,13:10,Mumbai,No,Debit
+90000,01:05,Unknown,Yes,Prepaid
+5000,10:30,Delhi,No,Credit
