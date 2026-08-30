@@ -59,6 +59,41 @@ Transaction: amount={row['amount']}, time={row['time']}, location={row['location
         return f"AI explanation unavailable: {e}"
 
 
+st.subheader("✍️ Check a Single Transaction Manually")
+with st.form("manual_check_form"):
+    m_col1, m_col2 = st.columns(2)
+    with m_col1:
+        manual_amount = st.number_input("Amount (₹)", min_value=0, value=1000)
+        manual_time = st.text_input("Time (HH:MM, 24-hour)", value="14:30")
+        manual_location = st.text_input("Location", value="Mumbai")
+    with m_col2:
+        manual_new_location = st.selectbox("Is this a new location?", ["No", "Yes"])
+        manual_card_type = st.selectbox("Card Type", ["Credit", "Debit", "Prepaid"])
+
+    manual_submit = st.form_submit_button("Check Risk")
+
+if manual_submit:
+    manual_row = pd.Series({
+        "amount": manual_amount,
+        "time": manual_time,
+        "location": manual_location,
+        "is_new_location": manual_new_location,
+        "card_type": manual_card_type
+    })
+    manual_level, manual_score, manual_reason = calculate_risk(manual_row)
+    manual_row["risk_level"] = manual_level
+    manual_row["risk_score"] = manual_score
+    manual_row["reason"] = manual_reason
+
+    st.write(f"**Risk Level:** {manual_level} ({manual_score}/100)")
+    st.write(f"**Reason:** {manual_reason}")
+
+    with st.spinner("Getting AI explanation..."):
+        ai_text = get_ai_explanation(manual_row)
+        st.info(ai_text)
+
+st.divider()
+
 uploaded_file = st.file_uploader("Upload transaction CSV file", type=["csv"])
 
 if uploaded_file:
