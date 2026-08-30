@@ -1,6 +1,12 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 st.set_page_config(page_title="PayShield AI", page_icon="🛡️", layout="wide")
 
@@ -12,7 +18,6 @@ def calculate_risk(row):
     score = 0
     reasons = []
 
-    # Rule 1: Unusually high amount
     if row['amount'] > 50000:
         score += 40
         reasons.append("Unusually high transaction amount")
@@ -20,23 +25,19 @@ def calculate_risk(row):
         score += 20
         reasons.append("Above-average transaction amount")
 
-    # Rule 2: Odd hour transaction (late night)
     hour = int(row['time'].split(":")[0])
     if hour < 5 or hour > 23:
         score += 25
         reasons.append("Transaction occurred at an unusual hour")
 
-    # Rule 3: New / unrecognized location
     if row['location'] == 'Unknown' or row['is_new_location'] == 'Yes':
         score += 25
         reasons.append("Transaction from a new or unrecognized location")
 
-    # Rule 4: Card type risk
     if row['card_type'] == 'Prepaid':
         score += 10
         reasons.append("Prepaid cards carry higher fraud risk")
 
-    # Final classification
     if score >= 60:
         level = "High"
     elif score >= 30:
@@ -46,6 +47,16 @@ def calculate_risk(row):
 
     reason_text = "; ".join(reasons) if reasons else "No risk indicators detected"
     return pd.Series([level, score, reason_text])
+
+
+def get_ai_explanation(row):
+    prompt = f"""You are a fraud risk analyst. In 1-2 short sentences, explain in simple language why this transaction got a {row['risk_level']} risk rating.
+Transaction: amount={row['amount']}, time={row['time']}, location={row['location']}, new_location={row['is_new_location']}, card_type={row['card_type']}, risk_score={row['risk_score']}, flagged_reasons={row['reason']}"""
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        return f"AI explanation unavailable: {e}"
 
 
 uploaded_file = st.file_uploader("Upload transaction CSV file", type=["csv"])
@@ -62,5 +73,12 @@ if uploaded_file:
     col3.metric("Low Risk", len(df[df['risk_level'] == 'Low']))
 
     st.dataframe(df, use_container_width=True)
+
+    st.subheader("🤖 AI Explanation for a Transaction")
+    row_index = st.selectbox("Select a transaction row to explain", df.index)
+    if st.button("Get AI Explanation"):
+        with st.spinner("Asking Gemini AI..."):
+            explanation = get_ai_explanation(df.loc[row_index])
+            st.info(explanation)
 else:
     st.info("Upload a CSV with columns: amount, time, location, is_new_location, card_type")
