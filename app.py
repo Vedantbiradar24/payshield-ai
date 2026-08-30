@@ -160,5 +160,26 @@ Write a short 3-4 sentence summary highlighting common patterns across these tra
                     st.success(summary_response.text.strip())
                 except Exception as e:
                     st.error(f"Summary unavailable: {e}")
+
+    st.subheader("📄 Download Full Analysis Report")
+    report_lines = [
+        "PayShield AI - Transaction Risk Analysis Report",
+        f"Total Transactions Analyzed: {len(df)}",
+        f"High Risk: {len(df[df['risk_level'] == 'High'])}",
+        f"Medium Risk: {len(df[df['risk_level'] == 'Medium'])}",
+        f"Low Risk: {len(df[df['risk_level'] == 'Low'])}",
+        "",
+        "--- High Risk Transactions ---"
+    ]
+    for _, r in df[df['risk_level'] == 'High'].iterrows():
+        report_lines.append(f"Amount: {r['amount']}, Time: {r['time']}, Location: {r['location']}, Card: {r['card_type']} -> Reason: {r['reason']}")
+
+    report_text = "\n".join(report_lines)
+    st.download_button(
+        label="📄 Download Text Report",
+        data=report_text,
+        file_name="payshield_report.txt",
+        mime="text/plain"
+    )
 else:
     st.info("Upload a CSV with columns: amount, time, location, is_new_location, card_type")
