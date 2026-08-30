@@ -74,6 +74,34 @@ if uploaded_file:
 
     st.dataframe(df, use_container_width=True)
 
+    st.subheader("📊 Risk Distribution")
+    chart_col1, chart_col2 = st.columns(2)
+
+    with chart_col1:
+        risk_counts = df['risk_level'].value_counts()
+        st.bar_chart(risk_counts)
+
+    with chart_col2:
+        st.write("Risk Score Distribution")
+        st.line_chart(df['risk_score'])
+
+    st.subheader("🔍 Filter Transactions")
+    selected_risk = st.multiselect(
+        "Show only these risk levels",
+        options=["High", "Medium", "Low"],
+        default=["High", "Medium", "Low"]
+    )
+    filtered_df = df[df['risk_level'].isin(selected_risk)]
+    st.dataframe(filtered_df, use_container_width=True)
+
+    csv_download = filtered_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="⬇️ Download Filtered Results as CSV",
+        data=csv_download,
+        file_name="payshield_risk_results.csv",
+        mime="text/csv"
+    )
+
     st.subheader("🤖 AI Explanation for a Transaction")
     row_index = st.selectbox("Select a transaction row to explain", df.index)
     if st.button("Get AI Explanation"):
