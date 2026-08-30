@@ -108,5 +108,22 @@ if uploaded_file:
         with st.spinner("Asking Gemini AI..."):
             explanation = get_ai_explanation(df.loc[row_index])
             st.info(explanation)
+
+    st.subheader("📋 Batch Risk Summary (High Risk Transactions)")
+    if st.button("Generate Summary for All High-Risk Transactions"):
+        high_risk_df = df[df['risk_level'] == 'High']
+        if len(high_risk_df) == 0:
+            st.write("No high-risk transactions found.")
+        else:
+            summary_prompt = f"""You are a fraud risk analyst. Below are {len(high_risk_df)} high-risk transactions flagged by a rule-based system. 
+Write a short 3-4 sentence summary highlighting common patterns across these transactions, to help a risk team prioritize their review.
+
+{high_risk_df[['amount','time','location','card_type','reason']].to_string(index=False)}"""
+            with st.spinner("Generating summary with Gemini AI..."):
+                try:
+                    summary_response = model.generate_content(summary_prompt)
+                    st.success(summary_response.text.strip())
+                except Exception as e:
+                    st.error(f"Summary unavailable: {e}")
 else:
     st.info("Upload a CSV with columns: amount, time, location, is_new_location, card_type")
